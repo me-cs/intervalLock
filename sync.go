@@ -115,23 +115,6 @@ func (g *group) Do(key string, fn func() (interface{}, error)) (v interface{}, a
 		}
 		g.mu.Unlock()
 	}
-	//c.forgetFunc = sync.OnceFunc(func() {
-	//	go func() {
-	//		t := time.NewTicker(time.Second)
-	//		defer t.Stop()
-	//		for range t.C {
-	//			g.mu.Lock()
-	//			if c.doneC.Load() == 0 {
-	//				delete(g.m, key)
-	//				g.mu.Unlock()
-	//				atomic.AddInt64(&counter1, 1)
-	//				return
-	//			}
-	//			g.mu.Unlock()
-	//		}
-	//	}()
-	//	return
-	//})
 	g.m[key] = c
 	g.mu.Unlock()
 	atomic.AddInt64(&counter, 1)
@@ -215,46 +198,6 @@ func newPanicError(v interface{}) error {
 	return &panicError{value: v, stack: stack}
 }
 
-//func (g *group) Do(key string, fn func() (interface{}, error)) (interface{}, *atomic.Int64, func(), error) {
-//	if vCall, ok := g.m.Load(key); ok {
-//		c := vCall.(*call)
-//		c.doneC.Add(1)
-//		c.wg.Wait()
-//		return c.val, &c.doneC, c.forgetFunc, c.err
-//	}
-//
-//	g.mu.Lock()
-//	if vCall, ok := g.m.Load(key); ok {
-//		g.mu.Unlock()
-//		c := vCall.(*call)
-//		c.doneC.Add(1)
-//		c.wg.Wait()
-//		return c.val, &c.doneC, c.forgetFunc, c.err
-//	}
-//
-//	c := new(call)
-//	c.wg.Add(1)
-//	g.m.Store(key, c)
-//	g.mu.Unlock()
-//	c.forgetFunc = sync.OnceFunc(func() {
-//		go func() {
-//			for {
-//				if c.doneC.Load() == 0 {
-//					g.m.Delete(key)
-//					atomic.AddInt64(&counter1, 1)
-//					return
-//				}
-//			}
-//		}()
-//		return
-//	})
-//	atomic.AddInt64(&counter, 1)
-//	c.val, c.err = fn()
-//	c.doneC.Add(1)
-//	c.wg.Done()
-//	return c.val, &c.doneC, c.forgetFunc, c.err
-//}
-
 var stdGroup = &group{}
 
 func singleFlight(key string, fn func() (interface{}, error)) (interface{}, *atomic.Int64, func(), error, bool) {
@@ -262,15 +205,5 @@ func singleFlight(key string, fn func() (interface{}, error)) (interface{}, *ato
 }
 
 func debugf() {
-
 	fmt.Printf("Size=%v\n", len(stdGroup.m))
-}
-
-// Forget tells the singleflight to forget about a key.  Future calls
-// to Do for this key will call the function rather than waiting for
-// an earlier call to complete.
-func (g *group) Forget(key string) {
-	g.mu.Lock()
-	delete(g.m, key)
-	g.mu.Unlock()
 }

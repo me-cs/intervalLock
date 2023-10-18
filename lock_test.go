@@ -1,4 +1,4 @@
-package IntervalLock
+package intervalLock
 
 import (
 	"sync"

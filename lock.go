@@ -1,4 +1,4 @@
-package IntervalLock
+package intervalLock
 
 func Lock(key string) (unlock func()) {
 	l := locker(key)

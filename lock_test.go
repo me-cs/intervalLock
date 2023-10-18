@@ -11,8 +11,8 @@ import (
 
 func TestLock(t *testing.T) {
 	var a = 0
-	var times = 1
-	var conflict = 5
+	var times = 10
+	var conflict = 100000
 	for j := 0; j < times; j++ {
 		time.Sleep(time.Millisecond * 50)
 		wg := sync.WaitGroup{}
@@ -21,7 +21,6 @@ func TestLock(t *testing.T) {
 			go func() {
 				unlock := Lock("1")
 				a++
-				time.Sleep(time.Second)
 				unlock()
 				wg.Done()
 			}()
@@ -42,10 +41,10 @@ func TestLock(t *testing.T) {
 
 func TestLargeInterval(t *testing.T) {
 	var a = 0
-	var times = 2
-	var conflict = 100
+	var times = 100
+	var conflict = 10
 	for j := 0; j < times; j++ {
-		time.Sleep(time.Millisecond * 1500)
+		time.Sleep(time.Millisecond * 10)
 		wg := sync.WaitGroup{}
 		for i := 0; i < conflict; i++ {
 			wg.Add(1)

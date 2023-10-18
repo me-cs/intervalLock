@@ -8,7 +8,6 @@ import (
 	"runtime/debug"
 	"sync"
 	"sync/atomic"
-	"time"
 	//"golang.org/x/sync/singleflight"
 )
 
@@ -108,23 +107,31 @@ func (g *group) Do(key string, fn func() (interface{}, error)) (v interface{}, a
 	c := new(call)
 	c.wg.Add(1)
 	c.doneC.Add(1)
-	c.forgetFunc = sync.OnceFunc(func() {
-		go func() {
-			t := time.NewTicker(time.Second)
-			defer t.Stop()
-			for range t.C {
-				g.mu.Lock()
-				if c.doneC.Load() == 0 {
-					delete(g.m, key)
-					g.mu.Unlock()
-					atomic.AddInt64(&counter1, 1)
-					return
-				}
-				g.mu.Unlock()
-			}
-		}()
-		return
-	})
+	c.forgetFunc = func() {
+		g.mu.Lock()
+		if c.doneC.Add(-1) == 0 {
+			atomic.AddInt64(&counter1, 1)
+			delete(g.m, key)
+		}
+		g.mu.Unlock()
+	}
+	//c.forgetFunc = sync.OnceFunc(func() {
+	//	go func() {
+	//		t := time.NewTicker(time.Second)
+	//		defer t.Stop()
+	//		for range t.C {
+	//			g.mu.Lock()
+	//			if c.doneC.Load() == 0 {
+	//				delete(g.m, key)
+	//				g.mu.Unlock()
+	//				atomic.AddInt64(&counter1, 1)
+	//				return
+	//			}
+	//			g.mu.Unlock()
+	//		}
+	//	}()
+	//	return
+	//})
 	g.m[key] = c
 	g.mu.Unlock()
 	atomic.AddInt64(&counter, 1)

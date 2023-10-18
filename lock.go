@@ -5,7 +5,6 @@ func Lock(key string) (unlock func()) {
 	l.mu.Lock()
 	return func() {
 		l.mu.Unlock()
-		l.doneC.Add(-1)
 		l.forgetFunc()
 	}
 }

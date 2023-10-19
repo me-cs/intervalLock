@@ -3,6 +3,7 @@ package intervalLock
 import (
 	"fmt"
 	"runtime"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -27,11 +28,11 @@ func TestLock(t *testing.T) {
 		}
 		wg.Wait()
 		if a != conflict*(j+1) {
-			t.Errorf("expect a=%v,got %v", a, conflict*(j+1))
+			t.Errorf("expect a=%v,got %v", conflict*(j+1), a)
 		}
 	}
 	if a != times*conflict {
-		t.Errorf("expect a=%v,got %v", a, times*conflict)
+		t.Errorf("expect a=%v,got %v", times*conflict, a)
 	}
 	time.Sleep(time.Millisecond * 100)
 	debugf()
@@ -57,16 +58,43 @@ func TestLargeInterval(t *testing.T) {
 		}
 		wg.Wait()
 		if a != conflict*(j+1) {
-			t.Errorf("expect a=%v,got %v", a, conflict*(j+1))
+			t.Errorf("expect a=%v,got %v", conflict*(j+1), a)
 		}
 	}
 	if a != times*conflict {
-		t.Errorf("expect a=%v,got %v", a, times*conflict)
+		t.Errorf("expect a=%v,got %v", times*conflict, a)
 	}
 	time.Sleep(time.Millisecond * 100)
 	debugf()
 	fmt.Printf("used %d mutex", atomic.LoadInt64(&counter))
 	fmt.Printf("closed %d mutex", atomic.LoadInt64(&counter1))
+}
+
+func TestMultiLock(t *testing.T) {
+	var testLen = 1000
+	nums := make([]int, testLen)
+	var conflict = 1000 * testLen
+	wg := sync.WaitGroup{}
+	fmt.Printf("%d", conflict)
+	for i := 0; i < conflict; i++ {
+		wg.Add(1)
+		go func(t int) {
+			ind := t % testLen
+			unlock := Lock(strconv.Itoa(ind))
+			nums[ind]++
+			unlock()
+			wg.Done()
+		}(i)
+	}
+	wg.Wait()
+	for _, num := range nums {
+		if num != conflict/testLen {
+			t.Errorf("expect %v,got %v", conflict/testLen, num)
+		}
+	}
+	debugf()
+	fmt.Printf("used %d mutex\n", atomic.LoadInt64(&counter))
+	fmt.Printf("closed %d mutex\n", atomic.LoadInt64(&counter1))
 }
 
 func benchmarkMutex(b *testing.B, slack, work bool) {

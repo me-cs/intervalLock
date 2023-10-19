@@ -16,6 +16,10 @@ so you don't want to hold a mutex for them, but you're worried about concurrent 
 Using intervalLock, it provides the ability to guarantee mutually exclusive operations when a conflict occurs,
 and to automatically release resources when the conflict disappears.
 
+For example: most of the characteristics of the website access data in the "law of two or eight": 
+80% of the business access is concentrated in 20% of the data. 
+We can use intervalLock to lock the data where the hot access occurs, 
+without paying attention to the other 80% of the cold data.
 
 English 
 

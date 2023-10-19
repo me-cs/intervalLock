@@ -35,8 +35,8 @@ func TestLock(t *testing.T) {
 	}
 	time.Sleep(time.Millisecond * 100)
 	debugf()
-	fmt.Printf("总共用了%d个mutex\n", atomic.LoadInt64(&counter))
-	fmt.Printf("总共关闭了%d个mutex\n", atomic.LoadInt64(&counter1))
+	fmt.Printf("used %d mutex\n", atomic.LoadInt64(&counter))
+	fmt.Printf("closed %d mutex\n", atomic.LoadInt64(&counter1))
 }
 
 func TestLargeInterval(t *testing.T) {
@@ -65,8 +65,8 @@ func TestLargeInterval(t *testing.T) {
 	}
 	time.Sleep(time.Millisecond * 100)
 	debugf()
-	fmt.Printf("总共用了%d个mutex", atomic.LoadInt64(&counter))
-	fmt.Printf("总共关闭了%d个mutex", atomic.LoadInt64(&counter1))
+	fmt.Printf("used %d mutex", atomic.LoadInt64(&counter))
+	fmt.Printf("closed %d mutex", atomic.LoadInt64(&counter1))
 }
 
 func benchmarkMutex(b *testing.B, slack, work bool) {

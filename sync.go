@@ -18,7 +18,7 @@ type mutex struct {
 }
 
 func locker(id string) *mutex {
-	v, doneC, forgetFunc, _, _ := singleFlight(id, func() (any, error) {
+	v, doneC, forgetFunc, _ := singleFlight(id, func() (any, error) {
 		return &sync.Mutex{}, nil
 	})
 	return &mutex{
@@ -34,7 +34,6 @@ type call struct {
 	err        error
 	doneC      atomic.Int64
 	forgetFunc func()
-	dups       int
 	chans      []chan<- Result
 }
 
@@ -48,9 +47,8 @@ type group struct {
 // Result holds the results of Do, so they can be passed
 // on a channel.
 type Result struct {
-	Val    interface{}
-	Err    error
-	Shared bool
+	Val interface{}
+	Err error
 }
 
 // errGoexit indicates the runtime.Goexit was called in
@@ -86,13 +84,12 @@ var counter1 = int64(0)
 // time. If a duplicate comes in, the duplicate caller waits for the
 // original to complete and receives the same results.
 
-func (g *group) Do(key string, fn func() (interface{}, error)) (v interface{}, at *atomic.Int64, ff func(), err error, shared bool) {
+func (g *group) Do(key string, fn func() (interface{}, error)) (v interface{}, at *atomic.Int64, ff func(), err error) {
 	g.mu.Lock()
 	if g.m == nil {
 		g.m = make(map[string]*call)
 	}
 	if c, ok := g.m[key]; ok {
-		c.dups++
 		c.doneC.Add(1)
 		g.mu.Unlock()
 		c.wg.Wait()
@@ -102,7 +99,7 @@ func (g *group) Do(key string, fn func() (interface{}, error)) (v interface{}, a
 		} else if c.err == errGoexit {
 			runtime.Goexit()
 		}
-		return c.val, &c.doneC, c.forgetFunc, c.err, true
+		return c.val, &c.doneC, c.forgetFunc, c.err
 	}
 	c := new(call)
 	c.wg.Add(1)
@@ -119,7 +116,7 @@ func (g *group) Do(key string, fn func() (interface{}, error)) (v interface{}, a
 	g.mu.Unlock()
 	atomic.AddInt64(&counter, 1)
 	g.doCall(c, key, fn)
-	return c.val, &c.doneC, c.forgetFunc, c.err, c.dups > 0
+	return c.val, &c.doneC, c.forgetFunc, c.err
 }
 
 // doCall handles the single call for a key.
@@ -156,7 +153,7 @@ func (g *group) doCall(c *call, key string, fn func() (interface{}, error)) {
 		} else {
 			// Normal return
 			for _, ch := range c.chans {
-				ch <- Result{c.val, c.err, c.dups > 0}
+				ch <- Result{c.val, c.err}
 			}
 		}
 	}()
@@ -200,7 +197,7 @@ func newPanicError(v interface{}) error {
 
 var stdGroup = &group{}
 
-func singleFlight(key string, fn func() (interface{}, error)) (interface{}, *atomic.Int64, func(), error, bool) {
+func singleFlight(key string, fn func() (interface{}, error)) (interface{}, *atomic.Int64, func(), error) {
 	return stdGroup.Do(key, fn)
 }
 

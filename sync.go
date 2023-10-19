@@ -34,7 +34,6 @@ type call struct {
 	err        error
 	doneC      atomic.Int64
 	forgetFunc func()
-	chans      []chan<- Result
 }
 
 // Group represents a class of work and forms a namespace in which
@@ -42,13 +41,6 @@ type call struct {
 type group struct {
 	mu sync.Mutex // protects m
 	m  map[string]*call
-}
-
-// Result holds the results of Do, so they can be passed
-// on a channel.
-type Result struct {
-	Val interface{}
-	Err error
 }
 
 // errGoexit indicates the runtime.Goexit was called in
@@ -142,19 +134,9 @@ func (g *group) doCall(c *call, key string, fn func() (interface{}, error)) {
 		if e, ok := c.err.(*panicError); ok {
 			// In order to prevent the waiting channels from being blocked forever,
 			// needs to ensure that this panic cannot be recovered.
-			if len(c.chans) > 0 {
-				go panic(e)
-				select {} // Keep this goroutine around so that it will appear in the crash dump.
-			} else {
-				panic(e)
-			}
+			panic(e)
 		} else if c.err == errGoexit {
 			// Already in the process of goexit, no need to call again
-		} else {
-			// Normal return
-			for _, ch := range c.chans {
-				ch <- Result{c.val, c.err}
-			}
 		}
 	}()
 

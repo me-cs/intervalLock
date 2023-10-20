@@ -24,7 +24,7 @@ lazyLock 非常适合业务场景。在编写特定业务代码时
 
 简体中文 | [English](README.md)
 
-### Example use:
+### 示例用法:
 ```go
 package main
 

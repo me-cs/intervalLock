@@ -5,7 +5,6 @@ import (
 	"runtime"
 	"strconv"
 	"sync"
-	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -34,10 +33,7 @@ func TestLock(t *testing.T) {
 	if a != times*conflict {
 		t.Errorf("expect a=%v,got %v", times*conflict, a)
 	}
-	time.Sleep(time.Millisecond * 100)
 	debugf()
-	fmt.Printf("used %d mutex\n", atomic.LoadInt64(&counter))
-	fmt.Printf("closed %d mutex\n", atomic.LoadInt64(&counter1))
 }
 
 func TestLargeInterval(t *testing.T) {
@@ -64,10 +60,7 @@ func TestLargeInterval(t *testing.T) {
 	if a != times*conflict {
 		t.Errorf("expect a=%v,got %v", times*conflict, a)
 	}
-	time.Sleep(time.Millisecond * 100)
 	debugf()
-	fmt.Printf("used %d mutex", atomic.LoadInt64(&counter))
-	fmt.Printf("closed %d mutex", atomic.LoadInt64(&counter1))
 }
 
 func TestMultiLock(t *testing.T) {
@@ -93,8 +86,6 @@ func TestMultiLock(t *testing.T) {
 		}
 	}
 	debugf()
-	fmt.Printf("used %d mutex\n", atomic.LoadInt64(&counter))
-	fmt.Printf("closed %d mutex\n", atomic.LoadInt64(&counter1))
 }
 
 func benchmarkMutex(b *testing.B, slack, work bool) {
@@ -193,4 +184,45 @@ func BenchmarkMutexSpin(b *testing.B) {
 			}
 		}
 	})
+}
+
+func TestDefer(t *testing.T) {
+	x := make([]int, 1000)
+	wg := sync.WaitGroup{}
+	for i := 0; i < 1000; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := 0; j < 1000; j++ {
+				defer Lock(strconv.FormatInt(int64(j), 10))()
+			}
+			for j := 0; j < 1000; j++ {
+				x[j]++
+			}
+		}()
+	}
+	wg.Wait()
+	for i := 0; i < 1000; i++ {
+		if x[i] != 1000 {
+			t.Errorf("expect %v,got %v", 1000, x[i])
+		}
+	}
+}
+
+func TestDeadLock(t *testing.T) {
+	b := []int{2, 1}
+	ch := make(chan bool)
+	defer Lock("1")()
+	go func() {
+		for i := range b {
+			defer Lock(strconv.Itoa(i))()
+		}
+		ch <- true
+	}()
+	af := time.After(1 * time.Second)
+	select {
+	case <-ch:
+		t.Fatalf("it should be dead lock")
+	case <-af:
+	}
 }

@@ -8,7 +8,6 @@ import (
 	"runtime/debug"
 	"sync"
 	"sync/atomic"
-	//"golang.org/x/sync/singleflight"
 )
 
 type mutex struct {
@@ -68,9 +67,6 @@ func (p *panicError) Unwrap() error {
 	return err
 }
 
-var counter = int64(0)
-var counter1 = int64(0)
-
 // Do executes and returns the results of the given function, making
 // sure that only one execution is in-flight for a given key at a
 // time. If a duplicate comes in, the duplicate caller waits for the
@@ -99,14 +95,12 @@ func (g *group) Do(key string, fn func() (interface{}, error)) (v interface{}, a
 	c.forgetFunc = func() {
 		g.mu.Lock()
 		if c.doneC.Add(-1) == 0 {
-			atomic.AddInt64(&counter1, 1)
 			delete(g.m, key)
 		}
 		g.mu.Unlock()
 	}
 	g.m[key] = c
 	g.mu.Unlock()
-	atomic.AddInt64(&counter, 1)
 	g.doCall(c, key, fn)
 	return c.val, &c.doneC, c.forgetFunc, c.err
 }

@@ -1,4 +1,4 @@
-package intervalLock
+package lazyLock
 
 // Lock locks the key and returns an unlock function.
 func Lock(key string) (unlock func()) {

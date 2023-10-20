@@ -1,4 +1,4 @@
-package intervalLock
+package lazyLock
 
 import (
 	"fmt"

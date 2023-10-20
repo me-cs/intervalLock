@@ -111,6 +111,18 @@ func BenchmarkMutex(b *testing.B) {
 	benchmarkMutex(b, false, false)
 }
 
+func BenchmarkMutexSlack(b *testing.B) {
+	benchmarkMutex(b, true, false)
+}
+
+func BenchmarkMutexWork(b *testing.B) {
+	benchmarkMutex(b, false, true)
+}
+
+func BenchmarkMutexWorkSlack(b *testing.B) {
+	benchmarkMutex(b, true, true)
+}
+
 func HammerMutex(loops int, cdone chan bool) {
 	for i := 0; i < loops; i++ {
 		Lock("test")()

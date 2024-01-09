@@ -2,7 +2,7 @@
 
 *lazyLock go implementation*
 
-[![Go](https://github.com/me-cs/lazyLock/workflows/Go/badge.svg?branch=main)](https://github.com/me-cs/lazyLock/actions)
+[![Go](https://github.com/me-cs/lazyLock/workflows/Go/badge.svg)](https://github.com/me-cs/lazyLock/actions)
 [![codecov](https://codecov.io/gh/me-cs/lazyLock/branch/main/graph/badge.svg)](https://codecov.io/gh/me-cs/lazyLock)
 [![Release](https://img.shields.io/github/v/release/me-cs/lazyLock.svg?style=flat-square)](https://github.com/me-cs/lazyLock)
 [![Go Report Card](https://goreportcard.com/badge/github.com/me-cs/lazyLock)](https://goreportcard.com/report/github.com/me-cs/lazyLock)
